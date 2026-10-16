@@ -1,0 +1,208 @@
+﻿<Page x:Class="_15_trpo.Pages.EditPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:val="clr-namespace:_15_trpo.Validation"
+      xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+      xmlns:local="clr-namespace:_15_trpo.Pages"
+      mc:Ignorable="d" 
+      d:DesignHeight="450" d:DesignWidth="800"
+      Title="EditPage">
+
+    <Grid Background="#dfeaeb">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TabControl Grid.Row="0" Margin="0">
+            <TabItem Header="Товары">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Row="0" HorizontalAlignment="Left" Orientation="Horizontal" Margin="10">
+                        <Button Name="Add" Click="Add_Click" Content="Добавить" Margin="5"/>
+                        <Button Name="Edit" Click="Edit_Click"  Content="Сохранить изменения" Margin="5"/>
+                        <Button Name="DeleteBtn" Click="DeleteBtn_Click" Content="Удалить" Margin="5"/>
+                    </StackPanel>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" >
+                        <Border BorderBrush="Black" BorderThickness="1">
+                            <StackPanel Width="190" Margin="10 10 10 0" DataContext="{Binding selectedProduct}">
+                                <TextBlock>Название</TextBlock>
+                               <TextBox>
+                                <TextBox.Text>
+                                        <Binding Path="Name" UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                            <val:Empty/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                                </TextBox>
+                                <TextBlock>Rating</TextBlock>
+                                <TextBox>
+                                <TextBox.Text>
+                                    <Binding Path="Rating" UpdateSourceTrigger="PropertyChanged">
+                                        <Binding.ValidationRules>
+                                                <val:Rating/>
+                                        </Binding.ValidationRules>
+                                    </Binding>
+                                </TextBox.Text>
+                                </TextBox>
+                                <TextBlock>Price</TextBlock>
+                                <TextBox>
+                                    <TextBox.Text>
+                                        <Binding Path="Price" UpdateSourceTrigger="PropertyChanged">
+                                            <Binding.ValidationRules>
+                                                <val:Number/>
+                                            </Binding.ValidationRules>
+                                        </Binding>
+                                    </TextBox.Text>
+                                </TextBox>
+                                <TextBlock>Stock</TextBlock>
+                                <TextBox>
+                                    <TextBox.Text>
+                                        <Binding Path="Stock" UpdateSourceTrigger="PropertyChanged">
+                                            <Binding.ValidationRules>
+                                                <val:Count/>
+                                            </Binding.ValidationRules>
+                                        </Binding>
+                                    </TextBox.Text>
+                                </TextBox>
+                                <TextBlock>Description</TextBlock>
+                                <TextBox>
+                                    <TextBox.Text>
+                                        <Binding Path="Description" UpdateSourceTrigger="PropertyChanged">
+                                            <Binding.ValidationRules>
+                                                <val:Empty/>
+                                            </Binding.ValidationRules>
+                                        </Binding>
+                                    </TextBox.Text>
+                                </TextBox>
+                                <TextBlock>Category</TextBlock>
+                                <ComboBox ItemsSource="{Binding DataContext.Categories, RelativeSource={RelativeSource AncestorType=Page}}" DisplayMemberPath="Name" SelectedItem="{Binding Category}"/>
+                                <TextBlock>Brand</TextBlock>
+                                <ComboBox ItemsSource="{Binding DataContext.Brands, RelativeSource={RelativeSource AncestorType=Page}}" DisplayMemberPath="Name" SelectedItem="{Binding Brand}"/>
+                                <TextBlock>Created At</TextBlock>
+                                <DatePicker SelectedDate="{Binding CreatedAt}"></DatePicker>
+                            </StackPanel>
+                    </Border>
+                        <Border BorderBrush="Black" BorderThickness="1">
+                            <StackPanel Width="165"  Margin="10 10 10 0">
+                                <ComboBox ItemsSource="{Binding Tags}" DisplayMemberPath="Name" SelectedItem="{Binding selectedTag}" x:Name="TagsCMB"></ComboBox>
+                                <Button x:Name="addTag" Click="addTag_Click" Margin="5">Добавить тег</Button>
+                                <Button x:Name="delTags" Click="delTags_Click" Content="Удалить теги" Margin="5"/>
+                                <ListView ItemsSource="{Binding selectedProduct.Tags}">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock>
+                                                <Run Text="#"/>
+                                                <Run Text="{Binding Name}"/>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <DataGrid x:Name="DataGridProducts" SelectedCellsChanged="DataGrid_SelectedCellsChanged" IsReadOnly="True" SelectedItem="{Binding selectedProduct}" ItemsSource="{Binding Products}" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Margin="10" AutoGenerateColumns="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
+                            <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTextColumn Header="Цена" Binding="{Binding Price}" Width="Auto"/>
+                            <DataGridTextColumn Header="Категория" Binding="{Binding Category.Name}" Width="*"/>
+                            <DataGridTextColumn Header="Бренд" Binding="{Binding Brand.Name}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Категории">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="10" Width="220">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Click="AddCategory_Click" Content="Добавить" Margin="5"/>
+                            <Button Click="EditCategory_Click" Content="Сохранить" Margin="5"/>
+                            <Button Click="DeleteCategory_Click" Content="Удалить" Margin="5"/>
+                        </StackPanel>
+                        <Border BorderBrush="Black" BorderThickness="1" Margin="0 10 0 0">
+                            <StackPanel Margin="10" DataContext="{Binding selectedCategory}">
+                                <TextBlock>Название</TextBlock>
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <DataGrid x:Name="DataGridCategories" ItemsSource="{Binding Categories}" SelectedItem="{Binding selectedCategory}" SelectionChanged="DataGridCategories_SelectionChanged" AutoGenerateColumns="False" Margin="10" Grid.Column="1" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
+                            <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Теги">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="10" Width="220">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Click="AddTagManage_Click" Content="Добавить" Margin="5"/>
+                            <Button Click="EditTagManage_Click" Content="Сохранить" Margin="5"/>
+                            <Button Click="DeleteTagManage_Click" Content="Удалить" Margin="5"/>
+                        </StackPanel>
+                        <Border BorderBrush="Black" BorderThickness="1" Margin="0 10 0 0">
+                            <StackPanel Margin="10" DataContext="{Binding selectedTag}">
+                                <TextBlock>Название</TextBlock>
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <DataGrid x:Name="DataGridTags" ItemsSource="{Binding Tags}" SelectedItem="{Binding selectedTag}" SelectionChanged="DataGridTags_SelectionChanged" AutoGenerateColumns="False" Margin="10" Grid.Column="1" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
+                            <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Бренды">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Margin="10" Width="220">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                            <Button Click="AddBrand_Click" Content="Добавить" Margin="5"/>
+                            <Button Click="EditBrand_Click" Content="Сохранить" Margin="5"/>
+                            <Button Click="DeleteBrand_Click" Content="Удалить" Margin="5"/>
+                        </StackPanel>
+                        <Border BorderBrush="Black" BorderThickness="1" Margin="0 10 0 0">
+                            <StackPanel Margin="10" DataContext="{Binding selectedBrand}">
+                                <TextBlock>Название</TextBlock>
+                                <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <DataGrid x:Name="DataGridBrands" ItemsSource="{Binding Brands}" SelectedItem="{Binding selectedBrand}" SelectionChanged="DataGridBrands_SelectionChanged" AutoGenerateColumns="False" Margin="10" Grid.Column="1" IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="Auto"/>
+                            <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+        </TabControl>
+    </Grid>
+</Page>

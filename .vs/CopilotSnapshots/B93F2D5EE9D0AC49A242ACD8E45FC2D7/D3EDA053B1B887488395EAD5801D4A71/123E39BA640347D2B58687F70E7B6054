@@ -1,0 +1,239 @@
+﻿using _15_trpo.Models;
+using _15_trpo.SingleToneService;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
+
+namespace _15_trpo.Pages
+{
+    /// <summary>
+    /// Логика взаимодействия для EditPage.xaml
+    /// </summary>
+    public partial class EditPage : Page, INotifyPropertyChanged // ← Добавь INPC
+    {
+        public ObservableCollection<Tag> Tags { get; set; } = new();
+        public ObservableCollection<Product> Products { get; set; } = new();
+        public ObservableCollection<Category> Categories { get; set; } = new();
+        public ObservableCollection<Brand> Brands { get; set; } = new();
+
+        private Product _selectedProduct;
+
+        public Product selectedProduct
+        {
+            get => _selectedProduct;
+            set { _selectedProduct = value; OnPropertyChanged(); }
+        }
+
+        private Tag _selectedTag;
+
+        public Tag selectedTag
+        {
+            get => _selectedTag;
+            set { _selectedTag = value; OnPropertyChanged(); }
+        }
+
+        private readonly _15trpoContext _db = DBService.Instance.Context;
+
+        public EditPage()
+        {
+            InitializeComponent();
+            DataContext = this;
+            LoadData();
+        }
+
+        private void LoadData()
+        {
+            Products.Clear();
+            Categories.Clear();
+            Brands.Clear();
+            Tags.Clear();
+
+            foreach (var p in _db.Products.Include(p => p.Category)
+                                          .Include(p => p.Brand)
+                                          .Include(p => p.Tags)
+                                          .ToList())
+            {
+                Products.Add(p);
+            }
+            foreach (var c in _db.Categories.ToList())
+                Categories.Add(c);
+            foreach (var b in _db.Brands.ToList())
+                Brands.Add(b);
+            foreach (var t in _db.Tags.ToList())
+                Tags.Add(t);
+
+            if (Products.Any() && selectedProduct == null)
+                selectedProduct = Products[0];
+        }
+
+        private void DeleteBtn_Click(object sender, RoutedEventArgs e)
+        {
+            if (selectedProduct == null || !_db.Products.Contains(selectedProduct)) return;
+
+            if (MessageBox.Show($"Удалить {selectedProduct.Name}?", "Подтверждение",
+                MessageBoxButton.OKCancel) == MessageBoxResult.OK)
+            {
+                _db.Products.Remove(selectedProduct);
+                _db.SaveChanges();
+                LoadData();
+            }
+        }
+
+        private void DataGrid_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
+        {
+            if (DataGridProducts.SelectedItem is Product product)
+            {
+                selectedProduct = product;
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null) =>
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+        private void Add_Click(object sender, RoutedEventArgs e)
+        {
+            if (selectedProduct.Id != 0)
+            {
+                MessageBox.Show("Заполните данные о новом продукте и нажмите добавить");
+                selectedProduct = new Product
+                {
+                    Name = "Новый продукт",
+                    Description = "",
+                    Price = 0,
+                    Stock = 0,
+                    Rating = 0,
+                    CreatedAt = DateTime.Now.ToString("s")
+                };
+                return;
+            }
+            if (selectedProduct == null)    
+            {
+                MessageBox.Show("Нет данных для добавления.");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(selectedProduct.Name))
+            {
+                MessageBox.Show("Название продукта не может быть пустым.");
+                return;
+            }
+            if (_db.Products.Any(p => p.Name == selectedProduct.Name))
+            {
+                MessageBox.Show("Продукт с таким названием уже существует.");
+                return;
+            }
+            
+
+            var newProduct = new Product
+            {
+                Name = selectedProduct.Name,
+                Description = selectedProduct.Description,
+                Price = selectedProduct.Price,
+                Stock = selectedProduct.Stock,
+                Rating = selectedProduct.Rating,
+                CreatedAt = string.IsNullOrWhiteSpace(selectedProduct.CreatedAt) ? DateTime.Now.ToString("s") : selectedProduct.CreatedAt,
+                CategoryId = selectedProduct.Category?.Id ?? selectedProduct.CategoryId,
+                BrandId = selectedProduct.Brand?.Id ?? selectedProduct.BrandId
+            };
+
+            if (selectedProduct.Tags != null)
+            {
+                foreach (var tag in selectedProduct.Tags)
+                {
+                    var dbTag = _db.Tags.Find(tag.Id);
+                    if (dbTag != null)
+                        newProduct.Tags.Add(dbTag);
+                }
+            }
+            if (newProduct.Id == 0)
+            {
+                newProduct.Id =  _db.Products.Max(p => p.Id) + 1;
+            }
+            _db.Products.Add(newProduct);
+            _db.SaveChanges();
+            LoadData();
+            MessageBox.Show("Продукт успешно добавлен!");
+            selectedProduct = Products.FirstOrDefault(p => p.Id == newProduct.Id);
+        }
+
+        private void Edit_Click(object sender, RoutedEventArgs e)
+        {
+            if (selectedProduct == null)
+                return;
+
+            if (selectedProduct.Id == 0)
+            {
+                MessageBox.Show("Сначала добавьте товар, затем редактируйте его.");
+                return;
+            }
+
+            var dbProduct = _db.Products.Include(p => p.Tags).FirstOrDefault(p => p.Id == selectedProduct.Id);
+            if (dbProduct == null) return;
+
+            dbProduct.Name = selectedProduct.Name;
+            dbProduct.Description = selectedProduct.Description;
+            dbProduct.Price = selectedProduct.Price;
+            dbProduct.Stock = selectedProduct.Stock;
+            dbProduct.Rating = selectedProduct.Rating;
+            dbProduct.CreatedAt = string.IsNullOrWhiteSpace(selectedProduct.CreatedAt) ? dbProduct.CreatedAt : selectedProduct.CreatedAt;
+            dbProduct.CategoryId = selectedProduct.Category?.Id ?? selectedProduct.CategoryId;
+            dbProduct.BrandId = selectedProduct.Brand?.Id ?? selectedProduct.BrandId;
+
+            dbProduct.Tags.Clear();
+            if (selectedProduct.Tags != null)
+            {
+                foreach (var t in selectedProduct.Tags)
+                {
+                    var dbTag = _db.Tags.Find(t.Id);
+                    if (dbTag != null)
+                        dbProduct.Tags.Add(dbTag);
+                }
+            }
+
+            _db.SaveChanges();
+            LoadData();
+            selectedProduct = Products.FirstOrDefault(p => p.Id == dbProduct.Id);
+        }
+
+        private void addTag_Click(object sender, RoutedEventArgs e)
+        {
+            if (TagsCMB.SelectedItem is Tag tag)
+            {
+                if (!selectedProduct.Tags.Contains(tag))
+                {
+                    int i = DataGridProducts.SelectedIndex;
+                    selectedProduct.Tags.Add(tag);
+                    _db.SaveChanges();
+                    LoadData();
+                    DataGridProducts.SelectedIndex = i;
+                }
+                else
+                {
+                    MessageBox.Show("Тег уже добавлен к этому продукту.");
+                }
+            }
+        }
+
+        private void delTags_Click(object sender, RoutedEventArgs e)
+        {
+            selectedProduct.Tags.Clear();
+            OnPropertyChanged();
+        }
+    }
+}
